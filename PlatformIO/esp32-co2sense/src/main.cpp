@@ -30,7 +30,7 @@ void writeTextToScreen(const char *text, uint8_t textSize = 1) {
 }
 
 void autoConnectToWifi() {
-    Serial.print("Trying to connect to Wifi with stored credentials");
+    Serial.println("Trying to connect to Wifi with stored credentials");
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
@@ -39,7 +39,6 @@ void autoConnectToWifi() {
     display.write("Connecting to Wi-Fi\n");
     display.display();
 
-    WiFi.mode(WIFI_STA);
     WiFi.begin();
 
     int timeoutCounter = 0;
@@ -59,6 +58,7 @@ void autoConnectToWifi() {
     }
 
     if (connectionSuccess) {
+        Serial.println("CONNECTION SUCCESSFUL");
         return;
     }
 
@@ -90,6 +90,8 @@ void autoConnectToWifi() {
             Serial.println("Configuration Saved!");
             Serial.println(ssid);
             Serial.println(password);
+            Serial.println(deviceid);
+            Serial.println(username);
             writeTextToScreen("  Config\n  Saved!", 2);
         }
 
@@ -101,15 +103,11 @@ void autoConnectToWifi() {
     }
 
     Serial.print("Trying to connect to wifi");
-
     writeTextToScreen("Connecting to WiFi", 1);
 
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
     WiFi.begin(ssid, password);
 
     timeoutCounter = 0;
-
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         timeoutCounter++;
@@ -152,23 +150,29 @@ void setup() {
     }
 
     printSplashScreen();
-    delay(3000);
+    delay(5000);
 
-    autoConnectToWifi();
+    autoConnectToWifi(); //Will block until wifi is connected successfully
 
-    writeTextToScreen("Connected!", 2);
-
-    Serial.println("\nConnected to Wifi!");
-    Serial.println(WiFi.localIP());
-
-    WiFi.disconnect(true, true);
+    writeTextToScreen("\nConnected!", 2);
 }
 
 void loop() {}
 
 void handle_saveconfig() {
-    strcpy(ssid, server.arg("ssid").c_str());
-    strcpy(password, server.arg("password").c_str());
+    if (strlen(server.arg("ssid").c_str()) > 0) {
+        strncpy(ssid, server.arg("ssid").c_str(), 32);
+    }
+    if (strlen(server.arg("password").c_str()) > 0) {
+        strncpy(password, server.arg("password").c_str(), 32);
+    }
+    if (strlen(server.arg("deviceid").c_str()) > 0) {
+        strncpy(deviceid, server.arg("deviceid").c_str(), 40);
+    }
+    if (strlen(server.arg("username").c_str()) > 0) {
+        strncpy(username, server.arg("username").c_str(), 32);
+    }
+
     server.send(200, "text/html", htmlConfigurationSaved);
     configSaved = true;
 }

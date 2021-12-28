@@ -12,6 +12,6 @@ const char *ap_password = "password";
 char ssid[32];
 char password[32];
 
-char deviceid[32];
+char deviceid[40];
 char username[32];
 #endif
