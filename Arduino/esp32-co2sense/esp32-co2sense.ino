@@ -8,6 +8,7 @@
 #include <SPI.h>
 
 #include "constants.h"
+
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET 4
@@ -22,6 +23,22 @@ void handle_saveconfig();
 
 WebServer server(80);
 
+void printSplashScreen() {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(18, 10);
+    display.cp437(true);
+    display.print("CO2Sense");
+
+    display.setCursor(0, 45);
+    display.setTextSize(1);
+    display.print("Developed by:");
+    display.setCursor(0, 55);
+    display.print("Nick Leijenhorst");
+    display.display();
+}
+
 void loadCredentials() {
   File file = SPIFFS.open("/credentials.json");
 
@@ -33,8 +50,8 @@ void loadCredentials() {
 
   strlcpy(credentials.ssid, doc["ssid"] | "", sizeof(credentials.ssid)); 
   strlcpy(credentials.password, doc["password"] | "", sizeof(credentials.password)); 
-  strlcpy(credentials.deviceid, doc["deviceid"] | "default-deviceid", sizeof(credentials.deviceid)); 
-  strlcpy(credentials.username, doc["username"] | "default-username", sizeof(credentials.username)); 
+  strlcpy(credentials.deviceid, doc["deviceid"] | "", sizeof(credentials.deviceid)); 
+  strlcpy(credentials.username, doc["username"] | "", sizeof(credentials.username)); 
 
   file.close();
 }
@@ -166,32 +183,20 @@ void autoConnectToWifi() {
     }
 }
 
-void printSplashScreen() {
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(18, 10);
-    display.cp437(true);
-    display.print("CO2Sense");
-
-    display.setCursor(0, 45);
-    display.setTextSize(1);
-    display.print("Developed by:");
-    display.setCursor(0, 55);
-    display.print("Nick Leijenhorst");
-    display.display();
-}
-
 void setup() {
     Serial.begin(115200);
-    SPIFFS.begin();
+
+    //Load credentials
+    SPIFFS.begin(true);
     loadCredentials();
 
-    if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-        Serial.println(F("SSD1306 allocation failed"));
-        for (;;)
-            ;  // Don't proceed, loop forever
-    }
+    //Modify the HTML to replace credentials if they have already been set
+    html.replace("{SSID}", credentials.ssid);
+    html.replace("{PASSWORD}", credentials.password);
+    html.replace("{DEVICEID}", credentials.deviceid);
+    html.replace("{USERNAME}", credentials.username);
+
+    display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
 
     if(strlen(credentials.ssid) == 0 || strlen(credentials.password) == 0 || strlen(credentials.deviceid) == 0 || strlen(credentials.username) == 0) {
       Serial.println("Not all credentials are saved, we should start the web portal.");
@@ -209,7 +214,7 @@ void setup() {
 
     autoConnectToWifi(); //Will block until wifi is connected successfully
 
-    //WiFi.disconnect(true, true);
+    WiFi.disconnect(true, true);
 
     Serial.println("Connected!");
     writeTextToScreen("\nConnected!", 2);
