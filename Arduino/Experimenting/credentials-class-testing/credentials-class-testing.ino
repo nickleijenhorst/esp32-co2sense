@@ -13,10 +13,10 @@ void setup() {
 
   credentials.print();
 
-  credentials.ssid.set("My SSID1");
-  credentials.password.set("My SSID2");
-  credentials.deviceid.set("My SSID3");
-  credentials.username.set("My SSID4");
+  credentials.ssid.set("SchmoopyWeb-");
+  credentials.password.set("Nikkuchan6969-");
+  credentials.deviceid.set("some_device_id");
+  credentials.username.set("nick");
 
   Serial.println("Changed credentials, printing again:");
   credentials.print();

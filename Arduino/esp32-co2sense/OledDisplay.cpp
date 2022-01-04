@@ -39,12 +39,36 @@ void OledDisplay::clearDisplay() {
   display->display();
 }
 
-void OledDisplay::writeTextToScreen(const char *text, uint8_t textSize) {
+void OledDisplay::writeText(const char *text, uint8_t textSize) {
     display->clearDisplay();
     display->setTextSize(textSize);
     display->setTextColor(SSD1306_WHITE);
     display->setCursor(0, 0);
     display->cp437(true);
     display->write(text);
+    display->display();
+}
+
+void OledDisplay::connectingToWifi() {
+    display->clearDisplay();
+    display->setTextSize(1);
+    display->setTextColor(SSD1306_WHITE);
+    display->setCursor(0, 20);
+    display->cp437(true);
+    display->write("Connecting to WiFi...\n\n");
+    display->display();
+}
+
+void OledDisplay::printDot() {
+    display->write(".");
+    display->display();
+}
+
+void OledDisplay::successConnectedToWifi() {
+    display->clearDisplay();
+    display->setTextSize(1);
+    display->setCursor(5, 25);
+    display->cp437(true);
+    display->write("Connected to Wi-Fi!");
     display->display();
 }

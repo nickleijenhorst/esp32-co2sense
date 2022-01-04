@@ -18,7 +18,10 @@ public:
     void init();
     void printSplashScreen();
     void clearDisplay();
-    void writeTextToScreen(const char *text, uint8_t textSize);
+    void writeText(const char *text, uint8_t textSize);
+    void connectingToWifi();
+    void printDot();
+    void successConnectedToWifi();
     
     Adafruit_SSD1306* display;
 };
