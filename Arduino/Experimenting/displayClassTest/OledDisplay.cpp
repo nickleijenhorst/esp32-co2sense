@@ -26,10 +26,10 @@ void OledDisplay::printSplashScreen() {
     display->cp437(true);
     display->print("CO2Sense");
 
-    display->setCursor(5, 40);
+    display->setCursor(0, 45);
     display->setTextSize(1);
     display->print("Developed by:");
-    display->setCursor(5, 50);
+    display->setCursor(0, 55);
     display->print("Nick Leijenhorst");
     display->display();
 }
@@ -53,9 +53,9 @@ void OledDisplay::connectingToWifi() {
     display->clearDisplay();
     display->setTextSize(1);
     display->setTextColor(SSD1306_WHITE);
-    display->setCursor(7, 20);
+    display->setCursor(0, 20);
     display->cp437(true);
-    display->write("Connecting to WiFi\n\n");
+    display->write("Connecting to WiFi...\n\n");
     display->display();
 }
 
@@ -83,9 +83,9 @@ void OledDisplay::printCO2value(int value) {
     sprintf(str, "%d", value);
   
     display->clearDisplay();
-    display->setTextSize(1);
+    display->setTextSize(2);
     display->setTextColor(SSD1306_WHITE);
-    display->setCursor(5, 5);
+    display->setCursor(0, 0);
     display->cp437(true);
     display->write("CO2");
 
@@ -95,11 +95,11 @@ void OledDisplay::printCO2value(int value) {
     int co2TextWidth = strlen(str) * 18;
     int ppmTextWidth = 18;
     
-    display->setCursor(64 - ((co2TextWidth+ppmTextWidth)/2), 25);
+    display->setCursor(64 - ((co2TextWidth+ppmTextWidth)/2), 30);
     display->write(str);
 
     display->setTextSize(1);
-    display->setCursor(64 + ((co2TextWidth)/2) - 4, 25);
+    display->setCursor(64 + ((co2TextWidth)/2) - 4, 30);
     display->write("PPM");
     display->display();
 }

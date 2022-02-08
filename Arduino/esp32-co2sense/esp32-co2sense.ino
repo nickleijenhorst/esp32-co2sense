@@ -8,7 +8,7 @@
 #include "constants.h"
 #include "SparkFun_SCD30_Arduino_Library.h"
 
-#define FACTORY_RESET 18
+#define FACTORY_RESET 13
 
 bool configSaved = false; //flag that indicates that a user has saved their credentials through the web form
 
@@ -19,8 +19,9 @@ WebServer server(80);
 Credentials credentials; //Holds credentials such as ssid, password, deviceid and username
 OledDisplay display;
 
-HTTPClient http;
 SCD30 airSensor;
+
+unsigned long previousMillis = 0; //Keep track of milliseconds between server requests
 
 //This function will create a Wi-Fi access point, and configuration web server
 void createConfigurationPortal() {
@@ -146,64 +147,74 @@ void setup() {
     Wire.begin();
 
     airSensor.begin(Wire, false);
-    float offset = airSensor.getTemperatureOffset();
-    Serial.print("Current temp offset: ");
-    Serial.print(offset, 2);
-    Serial.println("C");
-    airSensor.setTemperatureOffset(3.5);
+    delay(250);
+    airSensor.setTemperatureOffset(4.0);
+}
+
+void transmitToServer(uint16_t co2, String temperature, String humidity) {
+
+  HTTPClient http;
+  String serverURL = String(endpoint);
+
+  http.begin(serverURL);
+  http.addHeader("Content-Type", "application/json");
+
+  String deviceid_s = String(credentials.deviceid.value);
+  String username_s = String(credentials.username.value);
+
+  String request = "{";
+  request += "\"deviceid\":";
+  request += "\"" + deviceid_s + "\",";
+  request += "\"username\":";
+  request += "\"" + username_s + "\",";
+  request += "\"co2\":";
+  request += "\"" + String(co2) + "\",";
+  request += "\"temperature\":";
+  request += "\"" + temperature + "\",";
+  request += "\"humidity\":";
+  request += "\"" + humidity + "\"}";
+
+  Serial.print("Free heap memory: ");
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print("Sending: ");
+  Serial.println(request);
+
+  int http_response_code = http.POST(request);
+
+  Serial.print("HTTP code: ");
+  Serial.println(String(http_response_code));
+
+  if (http_response_code < 0) {
+      Serial.println("Did not get a reply from the server, trying to reconnect to wifi...");
+      WiFi.disconnect();
+      connectToWifi(credentials.ssid.value, credentials.password.value, 10);
+  } else {
+      String response = http.getString();
+      Serial.print("Server response: ");
+      Serial.println(response);
+  }
+  
+  http.end();
 }
 
 void loop() {
-    if (airSensor.dataAvailable())
-    {
-        uint16_t co2 = airSensor.getCO2();
-        String temperature = String(airSensor.getTemperature(),1);
-        String humidity = String(airSensor.getHumidity(),0);
+  if (airSensor.dataAvailable()) {
+    uint16_t co2 = airSensor.getCO2();
+    display.printCO2value(co2);
+    
+    String temperature = String(airSensor.getTemperature(),1);
+    String humidity = String(airSensor.getHumidity(),0);
 
-        String serverURL = String(endpoint);
+    //If 10 seconds have passed since the last server request, then we can send again
+    if(millis() - previousMillis > 10000) {
 
-        http.begin(serverURL);
-        http.addHeader("Content-Type", "application/json");
-
-        String deviceid_s = String(credentials.deviceid.value);
-        String username_s = String(credentials.username.value);
-
-        String request = "{";
-        request += "\"deviceid\":";
-        request += "\"" + deviceid_s + "\",";
-        request += "\"username\":";
-        request += "\"" + username_s + "\",";
-        request += "\"co2\":";
-        request += "\"" + String(co2) + "\",";
-        request += "\"temperature\":";
-        request += "\"" + temperature + "\",";
-        request += "\"humidity\":";
-        request += "\"" + humidity + "\"}";
-
-//        String request = "{";
-//        request += "\"co2\":";
-//        request += "\"" + String(co2) + "\"";
-//        request += ",\"uuid\":";
-//        request += "\"" + uuid + "\"}";
-        Serial.print("Sending: ");
-        Serial.println(request);
-
-        int http_response_code = http.POST(request);
-
-        if (http_response_code < 0)
-        {
-            Serial.println("Did not get a reply from the server, perhaps the URL is wrong or a firewall is blocking requests.");
-        }
-        else
-        {
-            String response = http.getString();
-            Serial.print("Response: ");
-            Serial.println(response);
-        }
-        http.end();
+      previousMillis = millis();
+      transmitToServer(co2, temperature, humidity);
     }
-
-    delay(10000);
+  }
+  
+  delay(500);
 }
 
 
